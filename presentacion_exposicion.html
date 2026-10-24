@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exposición E2E · ADSO 3145555 (Planes A, B y C)</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+  <style>
+    :root {
+      --bg: #0b1120;
+      --panel: #111827;
+      --panel-2: #1e293b;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --border: #334155;
+      --red: #ef4444;
+      --red-bg: rgba(239, 68, 68, 0.14);
+      --green: #10b981;
+      --green-bg: rgba(16, 185, 129, 0.14);
+      --amber: #f59e0b;
+      --amber-bg: rgba(245, 158, 11, 0.14);
+      --blue: #38bdf8;
+      --blue-bg: rgba(56, 189, 248, 0.14);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+    }
+    .deck {
+      flex: 1;
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+    .slide {
+      position: absolute;
+      inset: 0;
+      padding: 40px 64px;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 20px;
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+    .slide.active { display: flex; }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 14px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .badge.red { background: var(--red-bg); color: #fca5a5; border: 1px solid var(--red); }
+    .badge.green { background: var(--green-bg); color: #6ee7b7; border: 1px solid var(--green); }
+    .badge.amber { background: var(--amber-bg); color: #fcd34d; border: 1px solid var(--amber); }
+    .badge.blue { background: var(--blue-bg); color: #7dd3fc; border: 1px solid var(--blue); }
+    h1 { font-size: 36px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; }
+    h2 { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+    h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; color: var(--blue); }
+    p, li { font-size: 15px; line-height: 1.55; color: #e2e8f0; }
+    ul { padding-left: 20px; display: grid; gap: 8px; }
+    code, pre {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+    }
+    code {
+      background: rgba(255,255,255,0.08);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #7dd3fc;
+    }
+    pre {
+      background: #090d16;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      overflow-x: auto;
+      line-height: 1.45;
+      color: #e2e8f0;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      flex: 1;
+      align-items: stretch;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      flex: 1;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .card.problem { border-left: 5px solid var(--red); }
+    .card.solution { border-left: 5px solid var(--green); }
+    .card.info { border-left: 5px solid var(--blue); }
+    .branch-diagram {
+      background: #090d16;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+    }
+    .branch-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .branch-label {
+      width: 110px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      text-align: center;
+    }
+    .branch-track {
+      flex: 1;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      font-size: 13px;
+      font-weight: 600;
+      justify-content: space-between;
+    }
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    button.nav {
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    button.nav:hover { background: #334155; }
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+    .kpi {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      text-align: center;
+    }
+    .kpi b { font-size: 26px; display: block; font-family: 'JetBrains Mono', monospace; }
+    .kpi span { font-size: 12px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="deck">
+
+    <!-- SLIDE 1: PORTADA Y RESUMEN -->
+    <section class="slide active">
+      <div class="header">
+        <span class="badge blue">Evaluación E2E · ADSO 3145555</span>
+        <span style="color:var(--muted);font-size:14px">Sustentación de Hallazgos y Soluciones</span>
+      </div>
+      <div>
+        <h1>Análisis Técnico de Hallazgos Críticos<br><span style="color:var(--blue)">Diagnóstico, Evidencia y Solución</span></h1>
+        <p style="color:var(--muted);margin-top:8px">Enfoque en gobernanza de ramas (Plan A), reproducibilidad documental (Plan B) y contratos de API (Plan C).</p>
+      </div>
+      <div class="grid-3">
+        <div class="card problem">
+          <span class="badge amber">Plan A · Hallazgo #11 (H-04)</span>
+          <h2>Alerta Mujer (Eq. 11)</h2>
+          <p><b>Problema:</b> Código de desarrollo sin integrar en la rama principal (<code>main</code>).</p>
+          <ul>
+            <li><b>191 commits</b> y <b>90 PRs</b> atrapados en <code>develop</code>.</li>
+            <li><code>main</code> y <code>qa</code> solo tienen 1 línea en <code>README.md</code>.</li>
+            <li>Dejó al equipo en <b>69.4/100 (Juicio D)</b>, a 0.6 pts de aprobar.</li>
+          </ul>
+        </div>
+        <div class="card problem">
+          <span class="badge amber">Plan B · Hallazgo #39 (H-03)</span>
+          <h2>Lava Rápido (Eq. 5)</h2>
+          <p><b>Problema:</b> <code>README.md</code> del backend vacío (1 sola línea: <code># backend</code>).</p>
+          <ul>
+            <li>Backend de 15 módulos Spring Boot sin guía de arranque.</li>
+            <li>Variables Wompi/JWT/SMTP y creación de 2 admins ocultas.</li>
+            <li>Hunde Reproducibilidad (<b>D2 = 40/100</b>).</li>
+          </ul>
+        </div>
+        <div class="card problem">
+          <span class="badge blue">Plan C · Hallazgo #67 (H-25)</span>
+          <h2>SmartHome (Eq. 2)</h2>
+          <p><b>Problema:</b> Botón para abandonar hogar usa una ruta inexistente.</p>
+          <ul>
+            <li>Móvil envía <code>POST /api/v1/homes/{id}/leave</code>.</li>
+            <li>Backend espera <code>PATCH .../members/me/leave</code>.</li>
+            <li>Devuelve <b>404 Not Found</b> al intentar salir del hogar.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer">
+        <span>Usa las flechas ◀ ▶ del teclado o los botones para cambiar de diapositiva</span>
+        <div class="controls">
+          <button class="nav" onclick="prev()">◀ Anterior</button>
+          <span id="counter-1">1 / 5</span>
+          <button class="nav" onclick="next()">Siguiente ▶</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 2: PLAN A - EL PROBLEMA EN IMAGEN -->
+    <section class="slide">
+      <div class="header">
+        <span class="badge red">Plan A · Hallazgo #11 (H-04 · Alerta Mujer)</span>
+        <span style="color:var(--muted)">Lente A00 (Proceso y Gobierno) · Rúbrica T-13.9</span>
+      </div>
+      <div>
+        <h1>Plan A (Alerta Mujer): ¿Cuál es el Problema?</h1>
+        <p style="color:var(--muted)">Todo el trabajo del trimestre quedó en <code>develop</code>; quien clona o despliega <code>main</code> recibe un proyecto vacío.</p>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi"><b style="color:var(--amber)">69.4 / 100</b><span>Puntaje (a 0.6 de pasar)</span></div>
+        <div class="kpi"><b style="color:var(--red)">62 / 59 / 70</b><span>Commits atrapados en develop</span></div>
+        <div class="kpi"><b style="color:var(--red)">0 de 90 PRs</b><span>Apuntaron hacia main o qa</span></div>
+        <div class="kpi"><b style="color:var(--blue)">GAP-01</b><span>Reconocido en su propia Docs</span></div>
+      </div>
+      <div class="grid-2">
+        <div class="card problem">
+          <h3>🔴 Estado Actual de las Ramas en los 3 Repositorios</h3>
+          <div class="branch-diagram">
+            <div class="branch-row">
+              <span class="branch-label" style="background:var(--red-bg);color:#fca5a5;border:1px solid var(--red)">main</span>
+              <div class="branch-track" style="background:var(--red-bg);border:1px dashed var(--red);color:#fca5a5">
+                <span>⚪ 1 commit ("initial commit")</span>
+                <span>Solo README.md de 1 línea ❌</span>
+              </div>
+            </div>
+            <div class="branch-row">
+              <span class="branch-label" style="background:var(--amber-bg);color:#fcd34d;border:1px solid var(--amber)">qa</span>
+              <div class="branch-track" style="background:var(--amber-bg);border:1px dashed var(--amber);color:#fcd34d">
+                <span>⚪ 1 commit (Idéntico a main)</span>
+                <span>0 pruebas promovidas ❌</span>
+              </div>
+            </div>
+            <div class="branch-row">
+              <span class="branch-label" style="background:var(--green-bg);color:#6ee7b7;border:1px solid var(--green)">develop</span>
+              <div class="branch-track" style="background:var(--green-bg);border:1px solid var(--green);color:#6ee7b7">
+                <span>🟢 Backend (+62) · DB (+59) · Front (+70)</span>
+                <span>100% del código aquí ⚠️</span>
+              </div>
+            </div>
+          </div>
+          <p style="font-size:13px;color:var(--muted)">
+            <b>Evidencia exacta:</b><br>
+            • Backend: <code>develop @f8305802</code> vs <code>main @a328c27</code><br>
+            • Database: <code>develop @0c1fd009</code> vs <code>main @236f04a</code><br>
+            • Frontend: <code>develop @80183b87</code> vs <code>main @918e80a</code>
+          </p>
+        </div>
+        <div class="card info">
+          <h3>🕵️‍♂️ ¿Por qué ocurrió y qué impacto tiene?</h3>
+          <ul>
+            <li><b>Causa raíz documental:</b> En <code>00-governance/git-conventions.md</code> escribieron la regla <i>"No promover a qa o main sin política aprobada"</i> y dejaron esa política <i>"En refinamiento"</i> todo el trimestre.</li>
+            <li><b>Auto-fusión sin revisión (H-16):</b> Los 90 Pull Requests (<code>feat/hu-* → develop</code>) se fusionaron sin revisión de pares.</li>
+            <li><b>Impacto grave:</b> Cualquier evaluador o servidor Cloud (Vercel, Render, Docker) que descarga el repositorio por defecto toma la rama <code>main</code> y encuentra un proyecto vacío.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer">
+        <span>Equipo 11 · Alerta Mujer — Diagnóstico H-04</span>
+        <div class="controls">
+          <button class="nav" onclick="prev()">◀ Anterior</button>
+          <span id="counter-2">2 / 5</span>
+          <button class="nav" onclick="next()">Siguiente ▶</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 3: PLAN A - LA SOLUCION PASO A PASO -->
+    <section class="slide">
+      <div class="header">
+        <span class="badge green">Plan A · Solución Técnica (Alerta Mujer)</span>
+        <span style="color:var(--muted)">Esfuerzo S · Acción #3 del Plan de Cierre</span>
+      </div>
+      <div>
+        <h1>Plan A (Alerta Mujer): ¿Cómo se Soluciona?</h1>
+        <p style="color:var(--muted)">Establecer el flujo real de promoción <code>develop → qa → main</code> con Pull Requests revisados y protección de rama.</p>
+      </div>
+      <div class="grid-2">
+        <div class="card solution">
+          <h3>✅ Paso 1: Promover Ramas con Pull Requests</h3>
+          <p>Ejecutar en los 3 repositorios (<code>AlertaMujer_Backend</code>, <code>Database</code> y <code>Frontend</code>):</p>
+          <pre># 1. Actualizar rama develop
+git checkout develop
+git pull origin develop
+
+# 2. Crear PR de develop -> qa (Validación)
+gh pr create --base qa --head develop \
+  --title "chore(release): promover develop a qa"
+
+# 3. Crear PR de qa -> main (Entrega Oficial)
+gh pr create --base main --head qa \
+  --title "release: publicar versión entregable en main (Cierre H-04)"</pre>
+        </div>
+        <div class="card solution">
+          <h3>🔒 Paso 2: Gobernanza y Criterio de Cierre</h3>
+          <div class="branch-diagram">
+            <div class="branch-row">
+              <span class="branch-label" style="background:var(--green-bg);color:#6ee7b7;border:1px solid var(--green)">develop</span>
+              <div class="branch-track" style="background:var(--panel-2);color:var(--text)">
+                <span>1. Integración continua de HUs</span>
+                <span>── PR Revisado ──▶</span>
+              </div>
+            </div>
+            <div class="branch-row">
+              <span class="branch-label" style="background:var(--blue-bg);color:#7dd3fc;border:1px solid var(--blue)">qa</span>
+              <div class="branch-track" style="background:var(--panel-2);color:var(--text)">
+                <span>2. Pruebas E2E (138 tests Backend)</span>
+                <span>── PR Aprobado ──▶</span>
+              </div>
+            </div>
+            <div class="branch-row">
+              <span class="branch-label" style="background:var(--green-bg);color:#6ee7b7;border:1px solid var(--green)">main</span>
+              <div class="branch-track" style="background:var(--green-bg);border:1px solid var(--green);color:#6ee7b7">
+                <span>3. Producción estable y protegida</span>
+                <span>0 commits detrás ✅</span>
+              </div>
+            </div>
+          </div>
+          <ul>
+            <li><b>Revisión por pares:</b> Al menos <b>1 aprobación</b> antes del Merge.</li>
+            <li><b>Branch Protection en GitHub:</b> Bloquear <code>git push</code> directo a <code>main</code>.</li>
+            <li><b>Verificación de cierre:</b> <code>git rev-list --count origin/main..origin/develop</code> devuelve <b><code>0</code></b>.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer">
+        <span>Equipo 11 · Alerta Mujer — Solución H-04</span>
+        <div class="controls">
+          <button class="nav" onclick="prev()">◀ Anterior</button>
+          <span id="counter-3">3 / 5</span>
+          <button class="nav" onclick="next()">Siguiente ▶</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 4: PLAN B - LAVA RAPIDO VEHICULAR -->
+    <section class="slide">
+      <div class="header">
+        <span class="badge amber">Plan B · Hallazgo #39 (H-03 · Lava Rápido Vehicular)</span>
+        <span style="color:var(--muted)">Lente A00 · Rúbricas R-1.2 y R-2.1 (Reproducibilidad)</span>
+      </div>
+      <div>
+        <h1>Plan B (Lava Rápido): README del Backend Vacío</h1>
+        <p style="color:var(--muted)">Un monolito modular en Spring Boot (15 módulos) cuyo <code>README.md</code> solo tiene una línea: <code># backend</code>.</p>
+      </div>
+      <div class="grid-2">
+        <div class="card problem">
+          <h3>🔴 El Problema (Evidencia: <code>README.md:1</code>)</h3>
+          <pre># backend</pre>
+          <ul>
+            <li><b>Cero instrucciones de arranque:</b> No explica que requiere JDK 17, PostgreSQL con el esquema previo (<code>ddl-auto=validate</code>) ni cómo correr Docker.</li>
+            <li><b>Variables secretas/críticas sin documentar (H-20):</b> <code>.env.example</code> omite variables que exige <code>docker-compose.yml</code> (<code>WOMPI_PUBLIC_KEY</code>, <code>MAIL_*</code>, <code>CORS_ALLOWED_ORIGINS</code>).</li>
+            <li><b>Regla oculta de Administradores (H-06):</b> <code>AdminIdentityPolicy.java:21</code> exige exactamente <b>2 UUIDs</b> en <code>ADMIN_USER_IDS</code> creados con una herramienta CLI interna (<code>OwnerProvisioningTool.java</code>) que nadie documentó.</li>
+          </ul>
+        </div>
+        <div class="card solution">
+          <h3>🟢 La Solución (Reescritura de <code>README.md</code>)</h3>
+          <pre># Lava Rápido Vehicular — Backend API (Spring Boot 3 / Java 17)
+## 1. Requisitos y Arquitectura (15 módulos)
+- JDK 17, Maven (./mvnw), Docker y PostgreSQL 16.
+## 2. Variables de Entorno (.env)
+- DB_URL, DB_USERNAME, DB_PASSWORD, JWT_SECRET
+- WOMPI_PUBLIC_KEY, WOMPI_PRIVATE_KEY, WOMPI_EVENTS_SECRET
+- ADMIN_USER_IDS (2 UUIDs separados por coma)
+## 3. Orden de Arranque
+1. Levantar BD y migraciones SQL
+2. cp backend-vehicular/.env.example backend-vehicular/.env
+3. docker compose up --build
+## 4. Aprovisionar Primer Administrador
+./mvnw exec:java -Dexec.mainClass="...OwnerProvisioningTool"</pre>
+          <p style="font-size:13px;color:#6ee7b7"><b>Criterio de cierre:</b> Un tercero levanta el backend en una máquina limpia siguiendo solo el <code>README.md</code>.</p>
+        </div>
+      </div>
+      <div class="footer">
+        <span>Equipo 5 · Lava Rápido Vehicular — Problema y Solución H-03</span>
+        <div class="controls">
+          <button class="nav" onclick="prev()">◀ Anterior</button>
+          <span id="counter-4">4 / 5</span>
+          <button class="nav" onclick="next()">Siguiente ▶</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 5: PLAN C - SMARTHOME -->
+    <section class="slide">
+      <div class="header">
+        <span class="badge blue">Plan C · Hallazgo #67 (H-25 · SmartHome)</span>
+        <span style="color:var(--muted)">Lente A06 (Arquitectura y Contratos) · Rúbricas T-14.2 y T-14.4</span>
+      </div>
+      <div>
+        <h1>Plan C (SmartHome): Ruta Inexistente al Salir del Hogar</h1>
+        <p style="color:var(--muted)">Doble ruptura de contrato REST (Método HTTP + URL) entre la App Móvil (<code>from_movil</code>) y el Backend (<code>smarthome-backend</code>).</p>
+      </div>
+      <div class="grid-2">
+        <div class="card problem">
+          <h3>🔴 El Problema (Error 404 Not Found)</h3>
+          <p><b>1. Lo que envía la App Móvil</b> (<code>lib/services/smart-home-service.ts:217</code>):</p>
+          <pre>// ❌ Método POST y ruta sin /members/me
+leaveHome(homeId, token) {
+  return apiClient.post&lt;void&gt;(
+    `/api/v1/homes/${encodeURIComponent(homeId)}/leave`,
+    undefined,
+    { token },
+  );
+}</pre>
+          <p><b>2. Lo que espera el Backend NestJS</b> (<code>homes.controller.ts:182</code>):</p>
+          <pre>// ✅ Método PATCH y sub-recurso /members/me/leave
+@Patch(':homeId/members/me/leave')
+@UseGuards(JwtAuthGuard)
+async leaveHome(@CurrentUser() user, @Param('homeId') homeId: string) {
+  return this.leaveHomeUseCase.execute(user.userId, homeId);
+}</pre>
+        </div>
+        <div class="card solution">
+          <h3>🟢 La Solución (Alinear Contrato REST + OpenAPI)</h3>
+          <p><b>1. Corregir línea 216-217 en <code>smart-home-service.ts</code>:</b></p>
+          <pre>// ✅ Cambia .post -> .patch y ajusta el path exacto
+leaveHome(homeId, token) {
+  return apiClient.patch&lt;void&gt;(
+    `/api/v1/homes/${encodeURIComponent(homeId)}/members/me/leave`,
+    undefined,
+    { token },
+  );
+}</pre>
+          <ul>
+            <li><b>2. Documentar en Swagger (H-42):</b> Añadir <code>@ApiOperation({ summary: 'Abandonar hogar' })</code> en <code>homes.controller.ts:182</code>.</li>
+            <li><b>3. Test de Contrato:</b> Añadir prueba unitaria verificando método <code>PATCH</code> y ruta <code>/members/me/leave</code>.</li>
+            <li><b>Criterio de cierre:</b> El botón <i>"Salir del hogar"</i> responde <code>200 OK</code> y retira al miembro del hogar.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer">
+        <span>Equipo 2 · SmartHome — Problema y Solución H-25</span>
+        <div class="controls">
+          <button class="nav" onclick="prev()">◀ Anterior</button>
+          <span id="counter-5">5 / 5</span>
+          <button class="nav" onclick="next()">Siguiente ▶</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    let current = 0;
+    const slides = document.querySelectorAll('.slide');
+    function show(idx) {
+      slides[current].classList.remove('active');
+      current = (idx + slides.length) % slides.length;
+      slides[current].classList.add('active');
+    }
+    function next() { show(current + 1); }
+    function prev() { show(current - 1); }
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') next();
+      if (e.key === 'ArrowLeft') prev();
+    });
+  </script>
+</body>
+</html>
